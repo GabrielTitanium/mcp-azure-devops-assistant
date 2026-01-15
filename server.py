@@ -5,6 +5,7 @@ mcp = FastMCP("azure-devops-mcp")
 
 ado_client = AzureDevOpsClient()
 
+
 @mcp.tool()
 def list_pipelines():
     """
@@ -19,21 +20,32 @@ def list_pipelines():
         for p in pipelines.get("value", [])
     ]
 
+@mcp.tool()
+def get_failed_runs(hours: int = 24):
+    """
+    Get failed pipeline runs in the last X hours (default: 24)
+    """
+    result = ado_client.get_failed_runs(hours)
+
+    return [
+        {
+            "pipeline": run["definition"]["name"],
+            "build_number": run["buildNumber"],
+            "finished_at": run["finishTime"]
+        }
+        for run in result.get("value", [])
+    ]
+
 if __name__ == "__main__":
     print("✅ MCP Azure DevOps Server starting...")
     mcp.run()
 
 @mcp.tool()
-def get_failed_pipeline_runs(hours: int = 24):
+def health():
     """
-    Get failed pipeline runs in the last X hours
+    Health check for the MCP server
     """
-    runs = ado_client.get_failed_runs(hours)
-    return [
-        {
-            "pipeline": r["definition"]["name"],
-            "finished_at": r["finishTime"],
-            "url": r.get("_links", {}).get("web", {}).get("href", "")
-        }
-        for r in runs.get("value", [])
-    ]
+    return {
+        "status": "ok",
+        "service": "azure-devops-mcp"
+    }
