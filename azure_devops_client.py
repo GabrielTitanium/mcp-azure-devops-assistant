@@ -4,6 +4,8 @@ load_dotenv()
 import os
 import base64
 import requests
+from datetime import datetime, timedelta
+
 
 class AzureDevOpsClient:
     def __init__(self):
@@ -26,5 +28,23 @@ class AzureDevOpsClient:
     def list_pipelines(self):
         url = f"{self.base_url}/_apis/pipelines?api-version=7.1-preview.1"
         response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()
+
+    def get_failed_runs(self, hours=24):
+        """
+        Get failed pipeline runs in the last X hours
+        """
+        since = datetime.utcnow() - timedelta(hours=hours)
+
+        url = f"{self.base_url}/_apis/build/builds"
+        params = {
+            "minFinishTime": since.isoformat() + "Z",
+            "statusFilter": "completed",
+            "resultFilter": "failed",
+            "api-version": "7.1"
+        }
+
+        response = requests.get(url, headers=self.headers, params=params)
         response.raise_for_status()
         return response.json()

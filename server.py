@@ -22,3 +22,18 @@ def list_pipelines():
 if __name__ == "__main__":
     print("✅ MCP Azure DevOps Server starting...")
     mcp.run()
+
+@mcp.tool()
+def get_failed_pipeline_runs(hours: int = 24):
+    """
+    Get failed pipeline runs in the last X hours
+    """
+    runs = ado_client.get_failed_runs(hours)
+    return [
+        {
+            "pipeline": r["definition"]["name"],
+            "finished_at": r["finishTime"],
+            "url": r.get("_links", {}).get("web", {}).get("href", "")
+        }
+        for r in runs.get("value", [])
+    ]
